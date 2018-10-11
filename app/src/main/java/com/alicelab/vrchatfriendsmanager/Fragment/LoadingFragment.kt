@@ -1,11 +1,13 @@
-package com.alicelab.vrchatfriendsmanager
+package com.alicelab.vrchatfriendsmanager.Fragment
 
 import android.app.Fragment
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import com.alicelab.vrchatfriendsmanager.R
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.GlideDrawableImageViewTarget
 import kotlinx.android.synthetic.main.fragment_loading.*
@@ -16,7 +18,22 @@ import kotlinx.android.synthetic.main.fragment_loading.*
 
 class LoadingFragment : Fragment() {
 
+    interface FragmentListener {
+        fun communicateAndChangeFragment()
+    }
+
+    private lateinit var mListener: FragmentListener
     private lateinit var loadingView: ImageView
+
+
+    override fun onAttach(context: Context?) {
+        super.onAttach(context)
+
+        if (context is FragmentListener) {
+            mListener = context
+        }
+    }
+
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View {
         super.onCreateView(inflater, container, savedInstanceState)
@@ -29,5 +46,7 @@ class LoadingFragment : Fragment() {
         loadingView = loadingGifView
         val target = GlideDrawableImageViewTarget(loadingView)
         Glide.with(this).load(R.raw.icon_loader).into(target)
+
+        mListener.communicateAndChangeFragment()
     }
 }
