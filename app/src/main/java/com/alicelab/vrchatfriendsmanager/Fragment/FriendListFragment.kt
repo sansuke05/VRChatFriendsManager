@@ -20,7 +20,7 @@ import kotlinx.android.synthetic.main.fragment_friend_list.*
 class FriendListFragment : Fragment() {
 
     //定数
-    val KEY_NAME = "key_name_list"
+    private val KEY_NAME = "key_name_list"
 
     var mNameList = mutableListOf<String>()
 

@@ -34,7 +34,11 @@ public class Communication {
         Single.<List<String>>create(emitter -> emitter.onSuccess(getOnlineFriendList()))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(items -> ((MainActivity)mContext).setStrItems(items));
+                .subscribe(items -> {
+                    MainActivity activity = (MainActivity)mContext;
+                    activity.setStrItems(items);
+                    activity.changeFragment();
+                });
     }
 
 
@@ -46,6 +50,8 @@ public class Communication {
         } catch (InterruptedException e){
             e.printStackTrace();
         }
+
+        Log.d("debug", "process finished");
 
         return Arrays.asList("taro", "jiro", "saburo", "KANI", "草草の草", "( ˘ω˘ )");
     }

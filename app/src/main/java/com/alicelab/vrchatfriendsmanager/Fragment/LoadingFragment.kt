@@ -3,6 +3,7 @@ package com.alicelab.vrchatfriendsmanager.Fragment
 import android.app.Fragment
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -47,6 +48,7 @@ class LoadingFragment : Fragment() {
         val target = GlideDrawableImageViewTarget(loadingView)
         Glide.with(this).load(R.raw.icon_loader).into(target)
 
+        Log.d("debug", "Now Loading")
         mListener.communicateAndChangeFragment()
     }
 }

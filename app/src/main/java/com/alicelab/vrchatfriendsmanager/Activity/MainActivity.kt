@@ -18,13 +18,18 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
     var strItems = mutableListOf<String>()
 
 
-    override fun communicateAndChangeFragment() {
-        Communication(this).start()
+    fun changeFragment(){
+        Log.d("debug", "change to friend list fragment")
 
         val fragment = FriendListFragment()
         val transaction = fragmentManager.beginTransaction()
         transaction.replace(R.id.container, fragment.createInstance(strItems))
         transaction.commit()
+    }
+
+
+    override fun communicateAndChangeFragment() {
+        Communication(this).start()
     }
 
 
