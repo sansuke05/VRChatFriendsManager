@@ -195,4 +195,9 @@ hs_err_pid*
 
 !/gradle/wrapper/gradle-wrapper.jar
 
+### Security Information ###
+# Auth info
+app/src/main/res/values/auth_data.xml
+
 # End of https://www.gitignore.io/api/android,androidstudio
+app/libs/
