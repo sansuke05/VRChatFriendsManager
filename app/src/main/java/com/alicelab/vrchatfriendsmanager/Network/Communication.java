@@ -5,10 +5,12 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import android.util.Base64;
+import android.widget.Toast;
 
 import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
 import com.alicelab.vrchatfriendsmanager.R;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -88,7 +90,7 @@ public class Communication {
     public void start() {
         getAuthInfoFromResource();
 
-        Single.<List<String>>create(emitter -> emitter.onSuccess(/*getOnlineFriendList()*/getAuthToken()))
+        Single.<List<String>>create(emitter -> emitter.onSuccess(getOnlineFriendList()))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(items -> {
@@ -100,7 +102,7 @@ public class Communication {
 
 
     private List<String> getAPIKey() {
-        String urlStr = API_BASE + "/config";
+        final String urlStr = API_BASE + "/config";
         String apiKey = "";
 
         try {
@@ -122,6 +124,7 @@ public class Communication {
                     apiKey = jsonData.getString("clientApiKey");
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
+                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;
@@ -143,7 +146,7 @@ public class Communication {
 
 
     private List<String> getAuthToken(){
-        String urlStr = API_BASE + "/auth/user";
+        final String urlStr = API_BASE + "/auth/user";
         final String userPassword = mUserName + ":" + mPassword;
         final String encodeAuthorization = Base64.encodeToString(userPassword.getBytes(), Base64.NO_WRAP);
         String authToken = "";
@@ -187,6 +190,7 @@ public class Communication {
                     }
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
+                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;
@@ -204,8 +208,54 @@ public class Communication {
 
 
     private List<String> getOnlineFriendList() {
-        
+        final String urlStr = API_BASE + "/auth/user/friends";
+        List<String> onlineFriendList = new ArrayList<>();
 
-        return Arrays.asList("taro", "jiro", "saburo", "KANI", "草草の草", "( ˘ω˘ )");
+        try {
+            Uri.Builder builder = new Uri.Builder();
+            builder.appendQueryParameter("apiKey", mApiKey);
+            builder.appendQueryParameter("authToken", mAuthToken);
+            url = new URL(urlStr + builder.toString());
+            con = (HttpURLConnection)url.openConnection();
+            con.setRequestMethod("GET");
+            con.setDoInput(true);
+            con.connect();
+
+            //responseの取得
+            int resp_code = con.getResponseCode();
+
+            switch (resp_code){
+                case HttpURLConnection.HTTP_OK:
+                    InputStream in = con.getInputStream();
+                    String response = readInputStream(in);
+
+                    //JSONからフレンド名を取得
+                    JSONArray jsonArray = new JSONArray(response);
+                    JSONObject jsonObject;
+                    String friendName;
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        jsonObject = jsonArray.getJSONObject(i);
+                        friendName = jsonObject.getString("displayName");
+                        onlineFriendList.add(friendName);
+                    }
+                    break;
+                case HttpURLConnection.HTTP_UNAUTHORIZED:
+                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        } catch (JSONException e){
+            e.printStackTrace();
+        } catch (IOException e){
+            e.printStackTrace();
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
+        }
+
+        return onlineFriendList;
     }
 }
