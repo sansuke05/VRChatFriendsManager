@@ -2,7 +2,9 @@ package com.alicelab.vrchatfriendsmanager.Network;
 
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
+import android.util.Base64;
 
 import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
 import com.alicelab.vrchatfriendsmanager.R;
@@ -14,10 +16,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.CookieManager;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -32,10 +38,12 @@ public class Communication {
 
     //定数
     private static final String API_BASE = "https://api.vrchat.cloud/api/1";
+    private static final String COOKIES_HEADER = "Set-Cookie";
 
     private HttpURLConnection con = null;
     private URL url = null;
     private String mApiKey = "";
+    private String mAuthToken = "";
     private String mUserName = "";
     private String mPassword = "";
 
@@ -71,6 +79,7 @@ public class Communication {
 
     private void getAuthInfoFromResource(){
         mApiKey = mContext.getString(R.string.api_key);
+        mAuthToken = mContext.getString(R.string.auth_token);
         mUserName = mContext.getString(R.string.user_name);
         mPassword = mContext.getString(R.string.password);
     }
@@ -79,8 +88,7 @@ public class Communication {
     public void start() {
         getAuthInfoFromResource();
 
-        Single.<List<String>>create(emitter ->
-                emitter.onSuccess(/*getOnlineFriendList()*/getAPIKey()))
+        Single.<List<String>>create(emitter -> emitter.onSuccess(/*getOnlineFriendList()*/getAuthToken()))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(items -> {
@@ -103,15 +111,30 @@ public class Communication {
             con.connect();
 
             //responseの取得
-            InputStream in = con.getInputStream();
-            String response = readInputStream(in);
+            int resp_code = con.getResponseCode();
 
-            JSONObject jsonData = new JSONObject(response);
-            apiKey = jsonData.getString("clientApiKey");
+            switch (resp_code){
+                case HttpURLConnection.HTTP_OK:
+                    InputStream in = con.getInputStream();
+                    String response = readInputStream(in);
+
+                    JSONObject jsonData = new JSONObject(response);
+                    apiKey = jsonData.getString("clientApiKey");
+                    break;
+                case HttpURLConnection.HTTP_UNAUTHORIZED:
+                    break;
+                default:
+                    break;
+            }
+
         } catch (JSONException e){
             e.printStackTrace();
         } catch (IOException e){
             e.printStackTrace();
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
         Log.d("debug", "VRChat APIKey: " + apiKey);
 
@@ -119,22 +142,69 @@ public class Communication {
     }
 
 
-    /*
     private List<String> getAuthToken(){
-
-    }
-    */
-
-    private List<String> getOnlineFriendList() {
-        Log.d("debug", "io thread");
+        String urlStr = API_BASE + "/auth/user";
+        final String userPassword = mUserName + ":" + mPassword;
+        final String encodeAuthorization = Base64.encodeToString(userPassword.getBytes(), Base64.NO_WRAP);
+        String authToken = "";
 
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e){
+            Uri.Builder builder = new Uri.Builder();
+            builder.appendQueryParameter("apiKey", mApiKey);
+            url = new URL(urlStr + builder.toString());
+            con = (HttpURLConnection)url.openConnection();
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Authorization", "Basic " + encodeAuthorization);
+            con.setDoInput(true);
+            con.connect();
+
+            //responseの取得
+            int resp_code = con.getResponseCode();
+
+            switch (resp_code) {
+                case HttpURLConnection.HTTP_OK:
+                    // Response HeaderからCookieを取得
+                    Map<String, List<String>> headerFields = con.getHeaderFields();
+                    List<String> cookiesHader = headerFields.get(COOKIES_HEADER);
+
+                    if (cookiesHader != null) {
+                        for (String cookieHeader : cookiesHader){
+                            List<HttpCookie> cookies;
+                            cookies = HttpCookie.parse(cookieHeader);
+
+                            if (cookies != null){
+                                // CookieからAuthTokenを取得
+                                for (HttpCookie cookie : cookies){
+                                    Log.d("debug", "cookie: " + cookie.toString());
+                                    String[] keyValue = cookie.toString().split("=");
+                                    if (keyValue[0].equals("auth")){
+                                        authToken = keyValue[1];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case HttpURLConnection.HTTP_UNAUTHORIZED:
+                    break;
+                default:
+                    break;
+            }
+        } catch (IOException e){
             e.printStackTrace();
+        } finally {
+            if (con != null) {
+                con.disconnect();
+            }
         }
 
-        Log.d("debug", "process finished");
+        return Arrays.asList(authToken);
+    }
+
+
+    private List<String> getOnlineFriendList() {
+        
 
         return Arrays.asList("taro", "jiro", "saburo", "KANI", "草草の草", "( ˘ω˘ )");
     }
