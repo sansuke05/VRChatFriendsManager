@@ -8,6 +8,7 @@ import android.util.Base64;
 import android.widget.Toast;
 
 import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
+import com.alicelab.vrchatfriendsmanager.Error;
 import com.alicelab.vrchatfriendsmanager.R;
 
 import org.json.JSONArray;
@@ -42,6 +43,7 @@ public class Communication {
     private static final String API_BASE = "https://api.vrchat.cloud/api/1";
     private static final String COOKIES_HEADER = "Set-Cookie";
 
+    private Error errorState = Error.NO_ERROR;
     private HttpURLConnection con = null;
     private URL url = null;
     private String mApiKey = "";
@@ -81,7 +83,6 @@ public class Communication {
 
     private void getAuthInfoFromResource(){
         mApiKey = mContext.getString(R.string.api_key);
-        mAuthToken = mContext.getString(R.string.auth_token);
         mUserName = mContext.getString(R.string.user_name);
         mPassword = mContext.getString(R.string.password);
     }
@@ -90,10 +91,20 @@ public class Communication {
     public void start() {
         getAuthInfoFromResource();
 
-        Single.<List<String>>create(emitter -> emitter.onSuccess(getOnlineFriendList()))
-                .subscribeOn(Schedulers.io())
+        Single.<List<String>>create(emitter -> {
+            mAuthToken = getAuthToken();
+            emitter.onSuccess(getOnlineFriendList());
+        }).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(items -> {
+                    if (errorState == Error.UNAUTHORIZED){
+                        Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+                        return;
+                    } else if (errorState == Error.COMMUNICATION){
+                        Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     MainActivity activity = (MainActivity)mContext;
                     activity.setStrItems(items);
                     activity.changeFragment();
@@ -124,7 +135,7 @@ public class Communication {
                     apiKey = jsonData.getString("clientApiKey");
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+                    errorState = Error.UNAUTHORIZED;
                     break;
                 default:
                     break;
@@ -145,7 +156,7 @@ public class Communication {
     }
 
 
-    private List<String> getAuthToken(){
+    private String getAuthToken(){
         final String urlStr = API_BASE + "/auth/user";
         final String userPassword = mUserName + ":" + mPassword;
         final String encodeAuthorization = Base64.encodeToString(userPassword.getBytes(), Base64.NO_WRAP);
@@ -190,7 +201,7 @@ public class Communication {
                     }
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+                    errorState = Error.UNAUTHORIZED;
                     break;
                 default:
                     break;
@@ -203,7 +214,7 @@ public class Communication {
             }
         }
 
-        return Arrays.asList(authToken);
+        return authToken;
     }
 
 
@@ -240,10 +251,10 @@ public class Communication {
                     }
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+                    errorState = Error.UNAUTHORIZED;
                     break;
                 default:
-                    Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
+                    errorState = Error.COMMUNICATION;
                     break;
             }
         } catch (JSONException e){
