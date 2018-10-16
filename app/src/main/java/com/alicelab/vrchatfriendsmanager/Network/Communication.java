@@ -2,13 +2,14 @@ package com.alicelab.vrchatfriendsmanager.Network;
 
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 import android.util.Base64;
 import android.widget.Toast;
 
 import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
-import com.alicelab.vrchatfriendsmanager.Error;
+import com.alicelab.vrchatfriendsmanager.utils.Error;
 import com.alicelab.vrchatfriendsmanager.R;
 
 import org.json.JSONArray;
@@ -19,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -104,8 +104,14 @@ public class Communication {
                         Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
                         return;
                     }
-
                     MainActivity activity = (MainActivity)mContext;
+
+                    // 初回起動時の場合、次回からMainActivityからの起動に切り替える処理
+                    SharedPreferences preferences = activity.getSharedPreferences(activity.getPREF_NAME(), Context.MODE_PRIVATE);
+                    preferences.edit()
+                            .putBoolean(activity.getPREF_VALUE(), true)
+                            .apply();
+
                     activity.setStrItems(items);
                     activity.changeFragment();
                 });

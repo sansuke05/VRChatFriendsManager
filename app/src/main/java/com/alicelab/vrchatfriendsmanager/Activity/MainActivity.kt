@@ -1,6 +1,9 @@
 package com.alicelab.vrchatfriendsmanager.Activity
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -14,6 +17,10 @@ import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 
 
 class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
+
+    val REQUEST_CODE = 1;
+    val PREF_NAME = "LAUNCH_STATE"
+    val PREF_VALUE = "LAUNCHED"
 
     var strItems = mutableListOf<String>()
 
@@ -37,10 +44,34 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 初回起動時にログイン画面からスタートする
+        val preferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        if (!preferences.getBoolean(PREF_VALUE, false)){
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivityForResult(intent, REQUEST_CODE)
+            return
+        }
+
         val fragment = LoadingFragment()
         val transaction = fragmentManager.beginTransaction()
         transaction.add(R.id.container, fragment)
         transaction.commit()
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            REQUEST_CODE -> {
+                if (resultCode == Activity.RESULT_OK){
+                    val fragment = LoadingFragment()
+                    val transaction = fragmentManager.beginTransaction()
+                    transaction.add(R.id.container, fragment)
+                    transaction.commit()
+                }
+            }
+        }
     }
 
 
