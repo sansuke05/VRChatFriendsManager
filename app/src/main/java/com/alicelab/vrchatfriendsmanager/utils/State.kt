@@ -7,7 +7,8 @@ package com.alicelab.vrchatfriendsmanager.utils
 enum class Error {
     NO_ERROR,
     UNAUTHORIZED,
-    COMMUNICATION
+    COMMUNICATION,
+    NO_DATA
 }
 
 enum class Mode {

@@ -1,18 +1,18 @@
-package com.alicelab.vrchatfriendsmanager.Activity
+package com.alicelab.vrchatfriendsmanager.activities
 
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import com.alicelab.vrchatfriendsmanager.Network.Communication
-import com.alicelab.vrchatfriendsmanager.Fragment.FriendListFragment
-import com.alicelab.vrchatfriendsmanager.Fragment.LoadingFragment
+import com.alicelab.vrchatfriendsmanager.network.Communication
+import com.alicelab.vrchatfriendsmanager.fragments.FriendListFragment
+import com.alicelab.vrchatfriendsmanager.fragments.LoadingFragment
 import com.alicelab.vrchatfriendsmanager.R
+import com.alicelab.vrchatfriendsmanager.storage.RealmOperation
 import com.alicelab.vrchatfriendsmanager.utils.Mode
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import io.realm.Realm
@@ -24,13 +24,10 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
     val PREF_NAME = "LAUNCH_STATE"
     val PREF_VALUE = "LAUNCHED"
 
-    lateinit var mRealm: Realm
-
     var strItems = mutableListOf<String>()
     var mode = Mode.LAUNCHED
 
-    var userName = ""
-    var password = ""
+    lateinit var operation: RealmOperation
 
 
     fun changeFragment(){
@@ -53,9 +50,8 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
         setContentView(R.layout.activity_main)
 
         // Realmのセットアップ
-        Realm.init(this)
-        mRealm = Realm.getDefaultInstance()
-
+        operation = RealmOperation(this)
+        operation.init()
 
         // 初回起動時にログイン画面からスタートする
         val preferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -75,12 +71,16 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        val bundle = data!!.extras
 
         when (requestCode) {
             REQUEST_CODE -> {
                 if (resultCode == Activity.RESULT_OK){
-                    this.userName = data!!.getStringExtra("USER_NAME")
-                    this.password = data!!.getStringExtra("PASSWORD")
+                    val userName = bundle.getString("USER_NAME")
+                    val password = bundle.getString("PASSWORD")
+
+                    // DBへアカウント情報の保存
+                    operation.createAccount(userName, password)
 
                     val fragment = LoadingFragment()
                     val transaction = fragmentManager.beginTransaction()
@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        mRealm.close()
+        operation.close()
     }
 
 

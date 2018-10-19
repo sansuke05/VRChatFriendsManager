@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.Network;
+package com.alicelab.vrchatfriendsmanager.network;
 
 
 import android.content.Context;
@@ -8,9 +8,10 @@ import android.util.Log;
 import android.util.Base64;
 import android.widget.Toast;
 
-import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
+import com.alicelab.vrchatfriendsmanager.activities.MainActivity;
+import com.alicelab.vrchatfriendsmanager.entities.Account;
+import com.alicelab.vrchatfriendsmanager.entities.AuthInfo;
 import com.alicelab.vrchatfriendsmanager.utils.Error;
-import com.alicelab.vrchatfriendsmanager.R;
 import com.alicelab.vrchatfriendsmanager.utils.Mode;
 
 import org.json.JSONArray;
@@ -32,6 +33,7 @@ import java.util.Map;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
+import io.realm.RealmResults;
 
 
 /**
@@ -47,6 +49,7 @@ public class Communication {
     private Error errorState = Error.NO_ERROR;
     private HttpURLConnection con = null;
     private URL url = null;
+    private String mId = "";
     private String mApiKey = "";
     private String mAuthToken = "";
     private String mUserName = "";
@@ -83,19 +86,47 @@ public class Communication {
     }
 
 
-    private void errorCheck(){
+    private boolean hasError(){
         if (errorState == Error.UNAUTHORIZED){
             Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+            return true;
         } else if (errorState == Error.COMMUNICATION){
             Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
+            return true;
         }
+        return false;
     }
 
 
-    private void getAuthInfoFromResource(){
-        //mApiKey = mContext.getString(R.string.api_key);
-        //mUserName = mContext.getString(R.string.user_name);
-        //mPassword = mContext.getString(R.string.password);
+    private Error getAuthInfoFromDB(MainActivity activity){
+        RealmResults<AuthInfo> data = activity.operation.readAuthInfo();
+
+        // データ取得エラーチェック
+        if (data.isEmpty()) {
+            return Error.NO_DATA;
+        }
+
+        AuthInfo authInfo = data.first();
+        mId = authInfo.getId();
+        mApiKey = authInfo.getApiKey();
+
+        return Error.NO_ERROR;
+    }
+
+
+    private Error getAccountFromDB(MainActivity activity) {
+        RealmResults<Account> data = activity.operation.readAccount();
+
+        // データ取得エラーチェック
+        if (data.isEmpty()) {
+            return Error.NO_DATA;
+        }
+
+        Account account = data.first();
+        mUserName = account.getUserName();
+        mPassword = account.getPassword();
+
+        return Error.NO_ERROR;
     }
 
 
@@ -103,10 +134,16 @@ public class Communication {
     public void start() {
         MainActivity activity = (MainActivity)mContext;
 
-        if (activity.getMode() == Mode.FIRST_LAUNCH){
-            mUserName = activity.getUserName();
-            mPassword = activity.getPassword();
+        // アカウント情報の取得
+        if (getAccountFromDB(activity) == Error.NO_DATA){
+            Toast.makeText(activity, "ローカルデータの取得に失敗しました", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        Log.d("debug", "user name: " + mUserName);
+        Log.d("debug", "password: " + mPassword);
+
+        if (activity.getMode() == Mode.FIRST_LAUNCH){
             Single.<List<String>>create(emitter -> {
                 mApiKey = getAPIKey();
                 mAuthToken = getAuthToken();
@@ -114,7 +151,10 @@ public class Communication {
             }).subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(items -> {
-                        errorCheck();
+                        if (this.hasError()) return;
+
+                        // DBへ承認データを保存
+                        activity.operation.createAuthInfo(mApiKey, mAuthToken);
 
                         // 初回起動時の場合、次回からMainActivityからの起動に切り替える処理
                         SharedPreferences preferences = activity.getSharedPreferences(activity.getPREF_NAME(), Context.MODE_PRIVATE);
@@ -127,14 +167,21 @@ public class Communication {
                     });
 
         } else {
-            getAuthInfoFromResource();
+            if (getAuthInfoFromDB(activity) == Error.NO_DATA){
+                Toast.makeText(activity, "ローカルデータの取得に失敗しました", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Single.<List<String>>create(emitter -> {
                 mAuthToken = getAuthToken();
                 emitter.onSuccess(getOnlineFriendList());
             }).subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(items -> {
-                        errorCheck();
+                        if (this.hasError()) return;
+
+                        // DBのデータを更新
+                        activity.operation.updateAuthInfo(mId, mAuthToken);
 
                         activity.setStrItems(items);
                         activity.changeFragment();

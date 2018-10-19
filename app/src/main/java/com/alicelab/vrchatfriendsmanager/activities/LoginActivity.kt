@@ -1,8 +1,9 @@
-package com.alicelab.vrchatfriendsmanager.Activity
+package com.alicelab.vrchatfriendsmanager.activities
 
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import com.alicelab.vrchatfriendsmanager.R
 import kotlinx.android.synthetic.main.activity_login.*
 
@@ -16,15 +17,22 @@ class LoginActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        val userName = userName.text
-        val password = password.text
-
         // MainActivityへの遷移
         loginButton.setOnClickListener({
+            val userName = userName.text.toString()
+            val password = password.text.toString()
+
+            Log.d("debug", "user name: $userName")
+            Log.d("debug", "password: $password")
+
             val intent = Intent()
-            intent.putExtra("USER_NAME", userName)
-            intent.putExtra("PASSWORD", password)
+            val bundle = Bundle()
+
+            bundle.putString("USER_NAME", userName)
+            bundle.putString("PASSWORD", password)
+            intent.putExtras(bundle)
             setResult(RESULT_OK, intent)
+
             finish()
         })
     }

@@ -43,3 +43,4 @@
 57387:46 kotlin-reflect
 57434:46 kotlin-script-runtime
 57481:46 kotlin-android-extensions
+57528:46 kotlin-annotation-processing-gradle

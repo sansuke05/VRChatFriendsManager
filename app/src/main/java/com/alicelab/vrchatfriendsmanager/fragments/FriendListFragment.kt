@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.Fragment
+package com.alicelab.vrchatfriendsmanager.fragments
 
 import android.app.Fragment
 import android.content.Context
@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.support.annotation.CheckResult
-import com.alicelab.vrchatfriendsmanager.Activity.MainActivity
+import com.alicelab.vrchatfriendsmanager.activities.MainActivity
 import com.alicelab.vrchatfriendsmanager.R
 import kotlinx.android.synthetic.main.fragment_friend_list.*
 
