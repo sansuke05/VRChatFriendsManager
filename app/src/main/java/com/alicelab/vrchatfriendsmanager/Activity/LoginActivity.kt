@@ -22,6 +22,8 @@ class LoginActivity : Activity() {
         // MainActivityへの遷移
         loginButton.setOnClickListener({
             val intent = Intent()
+            intent.putExtra("USER_NAME", userName)
+            intent.putExtra("PASSWORD", password)
             setResult(RESULT_OK, intent)
             finish()
         })

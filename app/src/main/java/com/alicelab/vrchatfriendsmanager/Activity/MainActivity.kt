@@ -13,7 +13,9 @@ import com.alicelab.vrchatfriendsmanager.Network.Communication
 import com.alicelab.vrchatfriendsmanager.Fragment.FriendListFragment
 import com.alicelab.vrchatfriendsmanager.Fragment.LoadingFragment
 import com.alicelab.vrchatfriendsmanager.R
+import com.alicelab.vrchatfriendsmanager.utils.Mode
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import io.realm.Realm
 
 
 class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
@@ -22,7 +24,13 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
     val PREF_NAME = "LAUNCH_STATE"
     val PREF_VALUE = "LAUNCHED"
 
+    lateinit var mRealm: Realm
+
     var strItems = mutableListOf<String>()
+    var mode = Mode.LAUNCHED
+
+    var userName = ""
+    var password = ""
 
 
     fun changeFragment(){
@@ -44,9 +52,15 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Realmのセットアップ
+        Realm.init(this)
+        mRealm = Realm.getDefaultInstance()
+
+
         // 初回起動時にログイン画面からスタートする
         val preferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         if (!preferences.getBoolean(PREF_VALUE, false)){
+            mode = Mode.FIRST_LAUNCH
             val intent = Intent(this, LoginActivity::class.java)
             startActivityForResult(intent, REQUEST_CODE)
             return
@@ -65,6 +79,9 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
         when (requestCode) {
             REQUEST_CODE -> {
                 if (resultCode == Activity.RESULT_OK){
+                    this.userName = data!!.getStringExtra("USER_NAME")
+                    this.password = data!!.getStringExtra("PASSWORD")
+
                     val fragment = LoadingFragment()
                     val transaction = fragmentManager.beginTransaction()
                     transaction.add(R.id.container, fragment)
@@ -72,6 +89,12 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
                 }
             }
         }
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mRealm.close()
     }
 
 

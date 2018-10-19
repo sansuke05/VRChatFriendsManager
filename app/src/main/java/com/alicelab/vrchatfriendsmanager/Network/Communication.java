@@ -11,6 +11,7 @@ import android.widget.Toast;
 import com.alicelab.vrchatfriendsmanager.Activity.MainActivity;
 import com.alicelab.vrchatfriendsmanager.utils.Error;
 import com.alicelab.vrchatfriendsmanager.R;
+import com.alicelab.vrchatfriendsmanager.utils.Mode;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -54,6 +55,7 @@ public class Communication {
     private Context mContext;
 
 
+    // Constructor
     public Communication(Context context){
         if (context instanceof MainActivity) {
             mContext = context;
@@ -81,44 +83,67 @@ public class Communication {
     }
 
 
+    private void errorCheck(){
+        if (errorState == Error.UNAUTHORIZED){
+            Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
+        } else if (errorState == Error.COMMUNICATION){
+            Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
     private void getAuthInfoFromResource(){
-        mApiKey = mContext.getString(R.string.api_key);
-        mUserName = mContext.getString(R.string.user_name);
-        mPassword = mContext.getString(R.string.password);
+        //mApiKey = mContext.getString(R.string.api_key);
+        //mUserName = mContext.getString(R.string.user_name);
+        //mPassword = mContext.getString(R.string.password);
     }
 
 
+    // Main
     public void start() {
-        getAuthInfoFromResource();
+        MainActivity activity = (MainActivity)mContext;
 
-        Single.<List<String>>create(emitter -> {
-            mAuthToken = getAuthToken();
-            emitter.onSuccess(getOnlineFriendList());
-        }).subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(items -> {
-                    if (errorState == Error.UNAUTHORIZED){
-                        Toast.makeText(mContext, "承認に失敗しました", Toast.LENGTH_SHORT).show();
-                        return;
-                    } else if (errorState == Error.COMMUNICATION){
-                        Toast.makeText(mContext, "通信に失敗しました", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    MainActivity activity = (MainActivity)mContext;
+        if (activity.getMode() == Mode.FIRST_LAUNCH){
+            mUserName = activity.getUserName();
+            mPassword = activity.getPassword();
 
-                    // 初回起動時の場合、次回からMainActivityからの起動に切り替える処理
-                    SharedPreferences preferences = activity.getSharedPreferences(activity.getPREF_NAME(), Context.MODE_PRIVATE);
-                    preferences.edit()
-                            .putBoolean(activity.getPREF_VALUE(), true)
-                            .apply();
+            Single.<List<String>>create(emitter -> {
+                mApiKey = getAPIKey();
+                mAuthToken = getAuthToken();
+                emitter.onSuccess(getOnlineFriendList());
+            }).subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(items -> {
+                        errorCheck();
 
-                    activity.setStrItems(items);
-                    activity.changeFragment();
-                });
+                        // 初回起動時の場合、次回からMainActivityからの起動に切り替える処理
+                        SharedPreferences preferences = activity.getSharedPreferences(activity.getPREF_NAME(), Context.MODE_PRIVATE);
+                        preferences.edit()
+                                .putBoolean(activity.getPREF_VALUE(), true)
+                                .apply();
+
+                        activity.setStrItems(items);
+                        activity.changeFragment();
+                    });
+
+        } else {
+            getAuthInfoFromResource();
+            Single.<List<String>>create(emitter -> {
+                mAuthToken = getAuthToken();
+                emitter.onSuccess(getOnlineFriendList());
+            }).subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(items -> {
+                        errorCheck();
+
+                        activity.setStrItems(items);
+                        activity.changeFragment();
+                    });
+        }
     }
 
 
-    private List<String> getAPIKey() {
+    private String getAPIKey() {
         final String urlStr = API_BASE + "/config";
         String apiKey = "";
 
@@ -158,7 +183,7 @@ public class Communication {
         }
         Log.d("debug", "VRChat APIKey: " + apiKey);
 
-        return Arrays.asList(apiKey);
+        return apiKey;
     }
 
 
@@ -273,6 +298,9 @@ public class Communication {
             }
         }
 
+        if (onlineFriendList.isEmpty()){
+            return Arrays.asList("フレンドリストの取得に失敗しました");
+        }
         return onlineFriendList;
     }
 }

@@ -9,3 +9,8 @@ enum class Error {
     UNAUTHORIZED,
     COMMUNICATION
 }
+
+enum class Mode {
+    FIRST_LAUNCH,
+    LAUNCHED
+}
