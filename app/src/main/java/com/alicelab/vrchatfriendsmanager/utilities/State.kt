@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.utils
+package com.alicelab.vrchatfriendsmanager.utilities
 
 /**
  * Created by user on 2018/10/15.

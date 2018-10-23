@@ -13,9 +13,8 @@ import com.alicelab.vrchatfriendsmanager.fragments.FriendListFragment
 import com.alicelab.vrchatfriendsmanager.fragments.LoadingFragment
 import com.alicelab.vrchatfriendsmanager.R
 import com.alicelab.vrchatfriendsmanager.storage.RealmOperation
-import com.alicelab.vrchatfriendsmanager.utils.Mode
+import com.alicelab.vrchatfriendsmanager.utilities.Mode
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
-import io.realm.Realm
 
 
 class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
@@ -24,10 +23,16 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
     val PREF_NAME = "LAUNCH_STATE"
     val PREF_VALUE = "LAUNCHED"
 
-    var strItems = mutableListOf<String>()
+    var items = mutableListOf<HashMap<String, String>>()
+    var sortedItems = listOf<HashMap<String, String>>()
     var mode = Mode.LAUNCHED
 
     lateinit var operation: RealmOperation
+
+
+    fun sortFriendList() {
+        sortedItems = items.sortedWith(compareBy{ it["displayName"] })
+    }
 
 
     fun changeFragment(){
@@ -35,7 +40,7 @@ class MainActivity : AppCompatActivity(), LoadingFragment.FragmentListener {
 
         val fragment = FriendListFragment()
         val transaction = fragmentManager.beginTransaction()
-        transaction.replace(R.id.container, fragment.createInstance(strItems))
+        transaction.replace(R.id.container, fragment.createInstance(sortedItems))
         transaction.commit()
     }
 

@@ -11,8 +11,8 @@ import android.widget.Toast;
 import com.alicelab.vrchatfriendsmanager.activities.MainActivity;
 import com.alicelab.vrchatfriendsmanager.entities.Account;
 import com.alicelab.vrchatfriendsmanager.entities.AuthInfo;
-import com.alicelab.vrchatfriendsmanager.utils.Error;
-import com.alicelab.vrchatfriendsmanager.utils.Mode;
+import com.alicelab.vrchatfriendsmanager.utilities.Error;
+import com.alicelab.vrchatfriendsmanager.utilities.Mode;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,7 +26,7 @@ import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -144,7 +144,7 @@ public class Communication {
         Log.d("debug", "password: " + mPassword);
 
         if (activity.getMode() == Mode.FIRST_LAUNCH){
-            Single.<List<String>>create(emitter -> {
+            Single.<List<HashMap<String, String>>>create(emitter -> {
                 mApiKey = getAPIKey();
                 mAuthToken = getAuthToken();
                 emitter.onSuccess(getOnlineFriendList());
@@ -162,7 +162,10 @@ public class Communication {
                                 .putBoolean(activity.getPREF_VALUE(), true)
                                 .apply();
 
-                        activity.setStrItems(items);
+                        activity.setItems(items);
+                        // フレンド名順にソート
+                        activity.sortFriendList();
+
                         activity.changeFragment();
                     });
 
@@ -172,7 +175,7 @@ public class Communication {
                 return;
             }
 
-            Single.<List<String>>create(emitter -> {
+            Single.<List<HashMap<String, String>>>create(emitter -> {
                 mAuthToken = getAuthToken();
                 emitter.onSuccess(getOnlineFriendList());
             }).subscribeOn(Schedulers.io())
@@ -183,7 +186,10 @@ public class Communication {
                         // DBのデータを更新
                         activity.operation.updateAuthInfo(mId, mAuthToken);
 
-                        activity.setStrItems(items);
+                        activity.setItems(items);
+                        // フレンド名順にソート
+                        activity.sortFriendList();
+
                         activity.changeFragment();
                     });
         }
@@ -296,9 +302,9 @@ public class Communication {
     }
 
 
-    private List<String> getOnlineFriendList() {
+    private List<HashMap<String, String>> getOnlineFriendList() {
         final String urlStr = API_BASE + "/auth/user/friends";
-        List<String> onlineFriendList = new ArrayList<>();
+        List<HashMap<String, String>> onlineFriendList = new ArrayList<>();
 
         try {
             Uri.Builder builder = new Uri.Builder();
@@ -318,15 +324,24 @@ public class Communication {
                     InputStream in = con.getInputStream();
                     String response = readInputStream(in);
 
-                    //JSONからフレンド名を取得
+                    //JSONからフレンド名とサムネイルを取得
                     JSONArray jsonArray = new JSONArray(response);
                     JSONObject jsonObject;
+                    HashMap<String, String> map;
                     String friendName;
+                    String thumbnailUrl;
                     for (int i = 0; i < jsonArray.length(); i++){
+                        map = new HashMap<>();
+
                         jsonObject = jsonArray.getJSONObject(i);
                         friendName = jsonObject.getString("displayName");
-                        onlineFriendList.add(friendName);
+                        thumbnailUrl = jsonObject.getString("currentAvatarThumbnailImageUrl");
+
+                        map.put("displayName", friendName);
+                        map.put("currentAvatarThumbnailImageUrl", thumbnailUrl);
+                        onlineFriendList.add(map);
                     }
+
                     break;
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
                     errorState = Error.UNAUTHORIZED;
@@ -345,9 +360,6 @@ public class Communication {
             }
         }
 
-        if (onlineFriendList.isEmpty()){
-            return Arrays.asList("フレンドリストの取得に失敗しました");
-        }
         return onlineFriendList;
     }
 }
