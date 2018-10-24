@@ -203,3 +203,4 @@ app/src/main/res/values/auth_data.xml
 app/libs/
 app/debug/output.json
 release.keystore
+app/release/output.json
