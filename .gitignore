@@ -202,5 +202,5 @@ app/src/main/res/values/auth_data.xml
 # End of https://www.gitignore.io/api/android,androidstudio
 app/libs/
 app/debug/output.json
-release.keystore
+debug.keystore
 app/release/output.json

@@ -31,3 +31,15 @@ Android 4.4 以上
 ## 動作確認済端末
 
 - Asus Zenfone 4 Max (Android 7.1.1)
+- F-04G ドコモスマートフォン ARROWS NX (Android 6.0.1)
+- Android One S4-KC (Android 8.0.1)
+
+## 更新履歴
+
+- 0.1.1
+インストールが正常に終了しない問題の解消
+
+- 0.1.0
+一般公開
+
+VRChatのオンラインなフレンドの名前とアバターサムネイルの一覧を取得する機能に対応
