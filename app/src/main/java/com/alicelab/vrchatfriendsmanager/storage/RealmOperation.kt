@@ -62,10 +62,24 @@ class RealmOperation(val context: Context) {
     }
 
 
+    fun updateAccount(id: String, password: String) {
+        mRealm.executeTransaction {
+            val account = mRealm.where(Account::class.java).equalTo("id",id).findFirst()
+            account!!.password = password
+        }
+    }
+
     fun updateAuthInfo(id: String, authToken: String) {
         mRealm.executeTransaction {
             val account = mRealm.where(AuthInfo::class.java).equalTo("id",id).findFirst()
             account!!.authToken = authToken
+        }
+    }
+
+    fun deleteAccount(id:String) {
+        mRealm.executeTransaction {
+            val account = mRealm.where(Account::class.java).equalTo("id",id).findAll()
+            account.deleteFromRealm(0)
         }
     }
 }
