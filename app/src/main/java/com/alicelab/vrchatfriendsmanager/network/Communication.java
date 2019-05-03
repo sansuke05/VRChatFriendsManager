@@ -8,7 +8,7 @@ import android.util.Log;
 import android.util.Base64;
 import android.widget.Toast;
 
-import com.alicelab.vrchatfriendsmanager.activities.MainActivity;
+import com.alicelab.vrchatfriendsmanager.main.MainActivity;
 import com.alicelab.vrchatfriendsmanager.entities.Account;
 import com.alicelab.vrchatfriendsmanager.entities.AuthInfo;
 import com.alicelab.vrchatfriendsmanager.utilities.Error;

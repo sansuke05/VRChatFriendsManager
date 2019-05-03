@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.activities
+package com.alicelab.vrchatfriendsmanager.login
 
 import android.app.Activity
 import android.content.Intent

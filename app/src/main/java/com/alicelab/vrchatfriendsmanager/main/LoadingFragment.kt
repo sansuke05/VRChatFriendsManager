@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.fragments
+package com.alicelab.vrchatfriendsmanager.main
 
 import android.app.Fragment
 import android.content.Context

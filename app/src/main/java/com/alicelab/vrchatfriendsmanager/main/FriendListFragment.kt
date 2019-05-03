@@ -1,17 +1,13 @@
-package com.alicelab.vrchatfriendsmanager.fragments
+package com.alicelab.vrchatfriendsmanager.main
 
-import android.app.Activity
 import android.app.Fragment
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.support.annotation.CheckResult
-import com.alicelab.vrchatfriendsmanager.activities.MainActivity
 import com.alicelab.vrchatfriendsmanager.R
 import com.alicelab.vrchatfriendsmanager.views.FriendListAdapter
 import kotlinx.android.synthetic.main.fragment_friend_list.*

@@ -1,4 +1,4 @@
-package com.alicelab.vrchatfriendsmanager.activities
+package com.alicelab.vrchatfriendsmanager.main
 
 import android.app.Activity
 import android.content.Context
@@ -9,9 +9,8 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.alicelab.vrchatfriendsmanager.network.Communication
-import com.alicelab.vrchatfriendsmanager.fragments.FriendListFragment
-import com.alicelab.vrchatfriendsmanager.fragments.LoadingFragment
 import com.alicelab.vrchatfriendsmanager.R
+import com.alicelab.vrchatfriendsmanager.login.LoginActivity
 import com.alicelab.vrchatfriendsmanager.storage.RealmOperation
 import com.alicelab.vrchatfriendsmanager.utilities.Mode
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
